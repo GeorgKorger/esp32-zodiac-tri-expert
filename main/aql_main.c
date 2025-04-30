@@ -13,15 +13,19 @@
 //#include "freertos/queue.h"
 #include "esp_log.h"
 #include "sdkconfig.h"
+
+#include "wifi.h"
 #include "aql_task.h"
 
 static const char *TAG = "aql_main";
+
+#define DEFAULT_POWER CONFIG_AQUAL_DEFAULT_POWER
 
 static aquaVal_t aquaVal;
 
 void app_main(void)
 {
-  ESP_LOGI(TAG,"Main App start");
+  aquaVal.triPower = DEFAULT_POWER;
   TaskHandle_t aql_tast_handle = NULL;
   create_aql_task(&aquaVal, &aql_tast_handle);
   configASSERT( aql_tast_handle );

@@ -2,6 +2,13 @@ menu "AquaLink Configuration"
 
     orsource "$IDF_PATH/examples/common_components/env_caps/$IDF_TARGET/Kconfig.env_caps"
 
+    config AQUAL_DEFAULT_POWER
+        int "Default Power"
+        range 0 100
+        default 70
+        help
+            Default Power Setting when starting and nothing in flash memory.
+
     config AQUAL_UART_PORT_NUM
         int "UART port number"
         range 0 2 if IDF_TARGET_ESP32 || IDF_TARGET_ESP32S3
@@ -9,15 +16,15 @@ menu "AquaLink Configuration"
         range 0 1
         default 1
         help
-            UART communication port number for the example.
+            UART communication port number.
             See UART documentation for available port numbers.
 
     config AQUAL_UART_BAUD_RATE
         int "UART communication speed"
         range 1200 115200
-        default 115200
+        default 9600
         help
-            UART communication speed for Modbus example.
+            UART communication speed.
 
     config AQUAL_UART_RXD
         int "UART RXD pin number"
@@ -49,10 +56,29 @@ menu "AquaLink Configuration"
             numbers for UART.
 
     config AQUAL_TASK_STACK_SIZE
-        int "UART echo RS485 example task stack size"
+        int "UART task stack size"
         range 1024 16384
         default 3072
         help
-            Defines stack size for UART echo RS485 example. Insufficient stack size can cause crash.
+            Defines stack size for aql_task. Insufficient stack size can cause crash.
+
+    config AQUAL_WITHOUT_UART
+        int "Debug without UART"
+        range 0 1
+        default 0
+        help
+            Respond with predefined Responses for ID and Power Command if not connected to tri-expert.
+
+    config WIFI_MAXIMUM_RETRY
+        int "Maximum retry"
+        default 5
+        help
+            Set the Maximum retry bevor a break is made
+
+    config WIFI_BREAK_DURATION
+        int "Break duration"
+        default 5
+        help
+            Set break duration in Minutes before next Connection attempt
 
 endmenu
