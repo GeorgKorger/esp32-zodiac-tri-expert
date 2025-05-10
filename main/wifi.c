@@ -11,9 +11,9 @@
 #include "lwip/err.h"
 #include "lwip/sys.h"
 
-/* We us a account.h File for SSID and Password, which is gitignored!
+/* We us a credentials.h file for SSID and Password, which is gitignored!
 */
-#include "account.h"
+#include "credentials.h"
 
 #define MAXIMUM_RETRY  CONFIG_WIFI_MAXIMUM_RETRY
 #define BREAK_DURATION CONFIG_WIFI_BREAK_DURATION

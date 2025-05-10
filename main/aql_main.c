@@ -6,34 +6,47 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "freertos/semphr.h"
+//#include "freertos/semphr.h"
 #include "esp_system.h"
 //#include "nvs_flash.h"
 //#include "driver/uart.h"
 //#include "freertos/queue.h"
 #include "esp_log.h"
 #include "sdkconfig.h"
+#include "nvs_flash.h"
 
 #include "wifi.h"
-#include "aql_task.h"
+#include "aql_config.h"
+#include "tri-expert.h"
+#include "flash.h"
 
 static const char *TAG = "aql_main";
 
-#define DEFAULT_POWER CONFIG_AQUAL_DEFAULT_POWER
-
 static aquaVal_t aquaVal;
+static int8_t power;
 
 void app_main(void)
 {
-  aquaVal.triPower = DEFAULT_POWER;
-  TaskHandle_t aql_tast_handle = NULL;
-  create_aql_task(&aquaVal, &aql_tast_handle);
-  configASSERT( aql_tast_handle );
-  while(true) {
-    vTaskDelay( 60000 / portTICK_PERIOD_MS ); //1 min delay
-    ESP_LOGD(TAG, "still running...");
+  //esp_event_loop_create_default();    
+  power = restorePowerFromFlash();
+  if(power >= 0) {
+    ESP_LOGI(TAG,"Power restored from flash: %d",power);
+  } 
+  else {
+    ESP_LOGW(TAG,"Power restore from flash failed");
+    power = DEFAULT_POWER;
+    storePowerToFlash(power);
   }
-    
   
+  ESP_LOGI(TAG, "Inital delay %d s",INIT_DELAY);
+  vTaskDelay( INIT_DELAY * 1000 / portTICK_PERIOD_MS ); //delay on startup
+
+  triExpertInit();
+  
+  readID();
+  while(true) {
+    vTaskDelay( TRI_EXPERT_LOOP_DELAY * 1000 / portTICK_PERIOD_MS ); //delay between tri-expert commands
+    setPowerReadVal(power, &aquaVal);
+  }
 }
 
