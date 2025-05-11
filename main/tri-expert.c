@@ -28,8 +28,8 @@
 
 static const char *TAG = "tri-expert";
 
-const char sIdCommand[]     = { 0x00, PACKET_HEADER, PACKET_DEST_AQUALINK, 0x14, 0x01, 0xD7, PACKET_FOOTER };
-char sOutputCommand[] = { 0x00, PACKET_HEADER, PACKET_DEST_AQUALINK, 0x11, 0x00, 0x00, PACKET_FOOTER };
+const uint8_t sIdCommand[]     = { 0x00, PACKET_HEADER, PACKET_DEST_AQUALINK, 0x14, 0x01, 0xD7, PACKET_FOOTER };
+uint8_t sOutputCommand[] = { 0x00, PACKET_HEADER, PACKET_DEST_AQUALINK, 0x11, 0x00, 0x00, PACKET_FOOTER };
 
 #define AQUAL_UART_PORT          (1)
 // CTS is not used in RS485 Half-Duplex Mode
@@ -49,11 +49,11 @@ char sOutputCommand[] = { 0x00, PACKET_HEADER, PACKET_DEST_AQUALINK, 0x11, 0x00,
 ****************/
 
 
-static int aqual_send(const int port, const char* str, uint8_t length)
+static int aqual_send(const int port, const uint8_t* str, uint8_t length)
 {
   ESP_LOGI(TAG, "Transmit %u bytes to %d:", length, port);
   for (int i = 0; i < length; i++) {
-      ESP_LOGD(TAG,"0x%.2X ", (uint8_t)str[i]);
+      ESP_LOGD(TAG,"0x%.2X ", str[i]);
   }
 #ifndef MOCKED 
   if (uart_write_bytes(port, str, length) != length) {
@@ -153,7 +153,7 @@ int readID(void) {
   len = uart_read_bytes(AQUAL_UART_PORT, data, BUF_SIZE, PACKET_READ_TICS);
 #endif
 #ifdef AQUAL_WITHOUT_UART
-  char testIdResponse[] = {0x00, PACKET_HEADER,'x','G','e','o','L','i',0x5A,PACKET_FOOTER};
+  char testIdResponse[] = {0x00, 0x10, 0x02, 0x00, 0x03, 0x01, 0x5A, 0x4F, 0x44, 0x49, 0x41, 0x43, 0x20, 0x54, 0x52, 0x69, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0x10, 0x03};
   len = sizeof(testIdResponse);
   memcpy(data, testIdResponse, len);
 #endif

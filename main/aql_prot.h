@@ -13,7 +13,7 @@ typedef struct aquaVal_s {
 }aquaVal_t;
 
 int parseIdResponse(uint8_t *response,int len);
-int prepareOutputCommand(uint8_t output_percent, char* cmd);
+int prepareOutputCommand(uint8_t output_percent, uint8_t* cmd);
 int parseOutputResponse(uint8_t *response, int len, aquaVal_t* val);
 
 #endif

@@ -3,7 +3,7 @@
 
 
 //delay on startup [s]
-#define INIT_DELAY 10
+#define INIT_DELAY 20
 
 //delay between tri-expert commands
 #define TRI_EXPERT_LOOP_DELAY 10

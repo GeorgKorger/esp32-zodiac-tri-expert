@@ -1,0 +1,52 @@
+I (10764) tri-expert: Transmit 9 bytes to 1:
+D (10764) tri-expert: 0x00 
+D (10764) tri-expert: 0x10 
+D (10774) tri-expert: 0x02 
+D (10774) tri-expert: 0xB0 
+D (10774) tri-expert: 0x14 
+D (10774) tri-expert: 0x01 
+D (10784) tri-expert: 0xD7 
+D (10784) tri-expert: 0x10 
+D (10784) tri-expert: 0x03 
+I (11324) aql_prot: Received 25 bytes:
+D (11324) aql_prot: 0x00
+D (11324) aql_prot: 0x10
+D (11324) aql_prot: 0x02
+D (11324) aql_prot: 0x00
+D (11324) aql_prot: 0x03
+D (11324) aql_prot: 0x01
+D (11324) aql_prot: 0x5A
+D (11324) aql_prot: 0x4F
+D (11334) aql_prot: 0x44
+D (11334) aql_prot: 0x49
+D (11334) aql_prot: 0x41
+D (11334) aql_prot: 0x43
+D (11334) aql_prot: 0x20
+D (11344) aql_prot: 0x54
+D (11344) aql_prot: 0x52
+D (11344) aql_prot: 0x69
+D (11344) aql_prot: 0x00
+D (11354) aql_prot: 0x00
+D (11354) aql_prot: 0x00
+D (11354) aql_prot: 0x00
+D (11354) aql_prot: 0x00
+D (11354) aql_prot: 0x00
+D (11364) aql_prot: 0xFF
+D (11364) aql_prot: 0x10
+D (11364) aql_prot: 0x03
+D (11364) aql_prot: Parsing response
+D (11374) aql_prot: Id: 
+I (21474) tri-expert: Transmit 9 bytes to 1:
+D (21474) tri-expert: 0x00 
+D (21474) tri-expert: 0x10 
+D (21474) tri-expert: 0x02 
+D (21474) tri-expert: 0xB0 
+D (21474) tri-expert: 0x46 
+D (21474) tri-expert: 0x08 
+D (21474) tri-expert: 0x00 
+D (21484) tri-expert: 0x10 
+D (21484) tri-expert: 0x03 
+E (21984) aql_prot: SetOutputResponse to small
+E (21984) tri-expert: Error parse response in setPowerReadVal
+I (31984) tri-expert: Transmit 9 bytes to 1:
+

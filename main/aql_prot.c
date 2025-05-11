@@ -82,13 +82,14 @@ int aquaLinkResponse(uint8_t **response, int len){
 
 int parseIdResponse(uint8_t *response, int len) {
   int newLen = aquaLinkResponse(&response, len) - 1;
-  int8_t i;
+  int8_t i,k=0;
   if( newLen >= 0 ) {
-    response += 1;
     for(i=0; i<(newLen); i++) {
-      if( (*(response+i)<0x20) || (*(response+i)>0x7E) ) break; // search for first non printable char
+      if( (*(response+i)>=0x20) && (*(response+i)<=0x7E) ) {  // search for printable chars
+		*(response+k++) = *(response+i);
+	  }
     }
-    *(response+i) = '\0';
+    *(response+k) = '\0';
     ESP_LOGD(TAG,"Id: %s",response);
   }
   return newLen;
@@ -116,13 +117,13 @@ int parseOutputResponse(uint8_t *response, int len, aquaVal_t* val) {
   # Commands
   ######################################################################*/
 
-int prepareOutputCommand(uint8_t output_percent, char* cmd) {
+int prepareOutputCommand(uint8_t output_percent, uint8_t* cmd) {
   if(output_percent >= 101) {
     ESP_LOGE(TAG, "Output percent not in range!"); // 101 for Boost mode.
     return(-15);
   }
-  cmd[4] = (char)output_percent;
-  cmd[5] = (char)calc_checksum((uint8_t*)cmd, 7);
+  cmd[5] = output_percent;
+  cmd[6] = calc_checksum(cmd, 6);
   return 0;
 }
 
