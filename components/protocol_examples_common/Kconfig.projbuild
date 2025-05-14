@@ -26,14 +26,14 @@ menu "Example Connection Configuration"
         config EXAMPLE_WIFI_SSID
             depends on !EXAMPLE_WIFI_SSID_PWD_FROM_STDIN
             string "WiFi SSID"
-            default "myssid"
+            default "Not used - credentials.h"
             help
                 SSID (network name) for the example to connect to.
 
         config EXAMPLE_WIFI_PASSWORD
             depends on !EXAMPLE_WIFI_SSID_PWD_FROM_STDIN
             string "WiFi Password"
-            default "mypassword"
+            default "Not used - credentials.h"
             help
                 WiFi password (WPA or WPA2) for the example to use.
                 Can be left blank if the network has no security set.

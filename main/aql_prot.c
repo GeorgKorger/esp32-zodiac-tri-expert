@@ -90,7 +90,7 @@ int parseIdResponse(uint8_t *response, int len) {
 	  }
     }
     *(response+k) = '\0';
-    ESP_LOGD(TAG,"Id: %s",response);
+    ESP_LOGI(TAG,"Id: %s",response);
   }
   return newLen;
 }

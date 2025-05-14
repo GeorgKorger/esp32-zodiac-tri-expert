@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "esp_log_level.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 //#include "freertos/semphr.h"
@@ -34,13 +35,15 @@ void app_main(void)
 	ESP_LOGI(TAG, "[APP] Free memory: %" PRIu32 " bytes", esp_get_free_heap_size());
 	ESP_LOGI(TAG, "[APP] IDF version: %s", esp_get_idf_version());
 
-	esp_log_level_set("mqtt_client", ESP_LOG_INFO);
+	esp_log_level_set("*", ESP_LOG_INFO);
+
+/*	esp_log_level_set("mqtt_client", ESP_LOG_INFO);
 	esp_log_level_set("mqtt", ESP_LOG_INFO);
 	esp_log_level_set("transport_base", ESP_LOG_INFO);
 	esp_log_level_set("esp-tls", ESP_LOG_INFO);
 	esp_log_level_set("transport", ESP_LOG_INFO);
 	esp_log_level_set("outbox", ESP_LOG_INFO);
-
+*/
 
   power = restorePowerFromFlash();
   if(power >= 0) {
