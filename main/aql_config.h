@@ -1,20 +1,19 @@
 //power on startup if flash is empty
 #define DEFAULT_POWER 70
 
+/*
+//delay on startup [s]
+#define INIT_DELAY 20
+
+//delay between tri-expert commands
+#define TRI_EXPERT_LOOP_DELAY 10
+*/
 
 //delay on startup [s]
 #define INIT_DELAY 20
 
 //delay between tri-expert commands
 #define TRI_EXPERT_LOOP_DELAY 10
-
-/*
-//delay on startup [s]
-#define INIT_DELAY 3
-
-//delay between tri-expert commands
-#define TRI_EXPERT_LOOP_DELAY 2
-*/
 /*
 	For mocking:
 		#define MOCKED
@@ -30,7 +29,7 @@
 	so you can debug on chip without connection to tri-expert.
 	Must also be defined when mocking.
 */
-//#define AQUAL_WITHOUT_UART
+#define AQUAL_WITHOUT_UART
 
 
 //blue led GPIO PIN 2
@@ -47,3 +46,5 @@
 #define WIFI_MAXIMUM_RETRY  5
 #define WIFI_BREAK_DURATION 5
 
+//mqtt parameters
+#define MQTT_BROKER "mqtt://eli"

@@ -15,10 +15,13 @@
 #include "sdkconfig.h"
 #include "nvs_flash.h"
 
-#include "wifi.h"
+#include "esp_event.h"
+#include "esp_netif.h"
+#include "protocol_examples_common.h"
 #include "aql_config.h"
 #include "tri-expert.h"
 #include "flash.h"
+#include "mqtt_stuff.h"
 
 static const char *TAG = "aql_main";
 
@@ -27,7 +30,18 @@ static int8_t power;
 
 void app_main(void)
 {
-  //esp_event_loop_create_default();    
+	ESP_LOGI(TAG, "[APP] Startup..");
+	ESP_LOGI(TAG, "[APP] Free memory: %" PRIu32 " bytes", esp_get_free_heap_size());
+	ESP_LOGI(TAG, "[APP] IDF version: %s", esp_get_idf_version());
+
+	esp_log_level_set("mqtt_client", ESP_LOG_INFO);
+	esp_log_level_set("mqtt", ESP_LOG_INFO);
+	esp_log_level_set("transport_base", ESP_LOG_INFO);
+	esp_log_level_set("esp-tls", ESP_LOG_INFO);
+	esp_log_level_set("transport", ESP_LOG_INFO);
+	esp_log_level_set("outbox", ESP_LOG_INFO);
+
+
   power = restorePowerFromFlash();
   if(power >= 0) {
     ESP_LOGI(TAG,"Power restored from flash: %d",power);
@@ -38,6 +52,11 @@ void app_main(void)
     storePowerToFlash(power);
   }
   
+  ESP_ERROR_CHECK(esp_netif_init());
+  ESP_ERROR_CHECK(esp_event_loop_create_default());
+  ESP_ERROR_CHECK(example_connect());
+  mqtt_app_start();
+
   ESP_LOGI(TAG, "Inital delay %d s",INIT_DELAY);
   vTaskDelay( INIT_DELAY * 1000 / portTICK_PERIOD_MS ); //delay on startup
 

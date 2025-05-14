@@ -11,6 +11,7 @@
 #include "esp_log.h"
 #include "sdkconfig.h"
 #include "aql_config.h"
+#include "mqtt_stuff.h"
 
 #ifndef MOCKED 
 	#include "driver/gpio.h"
@@ -131,10 +132,11 @@ char testOutputResponse[] = {0x00,PACKET_HEADER,2,3,4,5,6,7,75,62,77,45,0x30,PAC
     }
 #ifndef MOCKED 
     else {
-      //flash blue led
-      gpio_set_level(BLUE_LED, 1);
-      vTaskDelay( BLUE_LED_DELAY / portTICK_PERIOD_MS ); //flash time
-      gpio_set_level(BLUE_LED, 0);
+		mqtt_publish(pAquaVal);
+		//flash blue led
+		gpio_set_level(BLUE_LED, 1);
+		vTaskDelay( BLUE_LED_DELAY / portTICK_PERIOD_MS ); //flash time
+		gpio_set_level(BLUE_LED, 0);
     }
 #endif
     free(data);

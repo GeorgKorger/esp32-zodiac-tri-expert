@@ -1,6 +1,8 @@
 #ifndef AQL_PROT_H
 #define AQL_PROT_H
 
+#include <stdint.h>
+
 #define PACKET_HEADER 0x10, 0x02
 #define PACKET_DEST_AQUALINK 0xB0
 #define PACKET_FOOTER 0x10, 0x03
