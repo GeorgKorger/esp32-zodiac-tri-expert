@@ -5,13 +5,13 @@
 //delay on startup [s]
 #define INIT_DELAY 20
 
-//delay between tri-expert commands
+//delay between tri-expert commands (minimal 10 sec!)
 #define TRI_EXPERT_LOOP_DELAY 30
 
-/*
-//delay between tri-expert commands
-#define TRI_EXPERT_LOOP_DELAY 10
-*/
+#if( TRI_EXPERT_LOOP_DELAY < 10 )
+  #define TRI_EXPERT_LOOP_DELAY 10
+#endif
+
 /*
 	For mocking:
 		#define MOCKED
@@ -27,7 +27,7 @@
 	so you can debug on chip without connection to tri-expert.
 	Must also be defined when mocking.
 */
-//#define AQUAL_WITHOUT_UART
+#define AQUAL_WITHOUT_UART
 
 //blue led GPIO PIN 2
 #define BLUE_LED 2

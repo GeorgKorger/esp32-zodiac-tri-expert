@@ -50,6 +50,7 @@ int restorePowerFromFlash(void) {
   return p;
 }
 
+//ToDo: store only, if different value in flash
 void storePowerToFlash(int8_t p) {
   esp_err_t err = ESP_FAIL;
   if( !nvs_initialzed ) {
@@ -60,6 +61,7 @@ void storePowerToFlash(int8_t p) {
   // write
   err = nvs_set_i8(aql_handle, "power", p);
   if( err != ESP_OK ) {
+    nvs_commit(aql_handle);
     nvs_close(aql_handle);
     err = initFlash();
     if( err != ESP_OK ) return;

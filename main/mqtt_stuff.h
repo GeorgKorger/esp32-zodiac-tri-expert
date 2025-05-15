@@ -3,6 +3,6 @@
 
 #include "aql_prot.h"
 void mqtt_publish(aquaVal_t * aquaVal);
-void mqtt_app_start(void);
+void mqtt_app_start(QueueHandle_t *pPowerQueue);
 
 #endif /* MAIN_MQTT_STUFF_H_ */

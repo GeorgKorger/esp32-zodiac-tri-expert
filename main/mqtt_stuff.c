@@ -5,7 +5,8 @@
 #include <stdbool.h>
 #include <inttypes.h>
 #include "esp_system.h"
-//#include "nvs_flash.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/queue.h"
 #include "esp_event.h"
 #include "esp_netif.h"
 
@@ -15,6 +16,16 @@
 #include "aql_config.h"
 #include "mqtt_stuff.h"
 
+#ifdef AQUAL_WITHOUT_UART
+	char topicBuf[] = "pool/dummy/---------------";
+#else
+	char topicBuf[] = "pool/swg/---------------";
+#endif
+char* topic(char* end) {
+  strcpy(topicBuf+(sizeof(topicBuf)-16), end);
+  return topicBuf;  
+}
+
 static const char *TAG = "mqtt";
 static esp_mqtt_client_handle_t client;
 
@@ -22,13 +33,13 @@ void mqtt_publish(aquaVal_t * aquaVal) {
 	// MQTT_SKIP_PUBLISH_IF_DISCONNECTED should be enabled in menuconfig!
 	char printBuf[4];
 	sprintf(printBuf, "%3.1f", aquaVal->ph_setpoint);
-	esp_mqtt_client_publish(client, "/pool/swg/ph_setpoint", printBuf, 0, 1, 1);
+	esp_mqtt_client_publish(client, topic("ph_setpoint"), printBuf, 0, 1, 1);
 	sprintf(printBuf, "%3.1f", aquaVal->ph_current);
-	esp_mqtt_client_publish(client, "/pool/swg/ph_current", printBuf, 0, 1, 1);
+	esp_mqtt_client_publish(client, topic("ph_current"), printBuf, 0, 1, 1);
 	sprintf(printBuf, "%3d", aquaVal->acl_setpoint);
-	esp_mqtt_client_publish(client, "/pool/swg/acl_setpoint", printBuf, 0, 1, 1);
+	esp_mqtt_client_publish(client, topic("acl_setpoint"), printBuf, 0, 1, 1);
 	sprintf(printBuf, "%3d", aquaVal->acl_current);
-	esp_mqtt_client_publish(client, "/pool/swg/acl_current", printBuf, 0, 1, 1);
+	esp_mqtt_client_publish(client, topic("acl_current"), printBuf, 0, 1, 1);
 }
 	
 static void log_error_if_nonzero(const char *message, int error_code)
@@ -51,32 +62,24 @@ static void log_error_if_nonzero(const char *message, int error_code)
 static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
 {
     ESP_LOGD(TAG, "Event dispatched from event loop base=%s, event_id=%" PRIi32 "", base, event_id);
+    QueueHandle_t powerQueue = *( (QueueHandle_t*)handler_args);
     esp_mqtt_event_handle_t event = event_data;
     esp_mqtt_client_handle_t client = event->client;
     int msg_id;
     switch ((esp_mqtt_event_id_t)event_id) {
     case MQTT_EVENT_CONNECTED:
         ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
-        msg_id = esp_mqtt_client_publish(client, "/topic/qos1", "data_3", 0, 1, 0);
-        ESP_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);
 
-        msg_id = esp_mqtt_client_subscribe(client, "/topic/qos0", 0);
+        msg_id = esp_mqtt_client_subscribe(client, topic("power"), 1);
         ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
 
-        msg_id = esp_mqtt_client_subscribe(client, "/topic/qos1", 1);
-        ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
-
-        msg_id = esp_mqtt_client_unsubscribe(client, "/topic/qos1");
-        ESP_LOGI(TAG, "sent unsubscribe successful, msg_id=%d", msg_id);
-        break;
+		        break;
     case MQTT_EVENT_DISCONNECTED:
         ESP_LOGI(TAG, "MQTT_EVENT_DISCONNECTED");
         break;
 
     case MQTT_EVENT_SUBSCRIBED:
         ESP_LOGI(TAG, "MQTT_EVENT_SUBSCRIBED, msg_id=%d", event->msg_id);
-        msg_id = esp_mqtt_client_publish(client, "/topic/qos0", "data", 0, 0, 0);
-        ESP_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);
         break;
     case MQTT_EVENT_UNSUBSCRIBED:
         ESP_LOGI(TAG, "MQTT_EVENT_UNSUBSCRIBED, msg_id=%d", event->msg_id);
@@ -86,8 +89,12 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
         break;
     case MQTT_EVENT_DATA:
         ESP_LOGI(TAG, "MQTT_EVENT_DATA");
-        printf("TOPIC=%.*s\r\n", event->topic_len, event->topic);
-        printf("DATA=%.*s\r\n", event->data_len, event->data);
+        ESP_LOGI(TAG, "TOPIC=%.*s\r\n", event->topic_len, event->topic);
+        ESP_LOGI(TAG, "DATA=%.*s\r\n", event->data_len, event->data);
+    		if( strcmp( event->topic, topic("power") ) == 0 ) {
+    		    int pow = atoi(event->data);
+    		    xQueueOverwrite(powerQueue, &pow);
+    		}
         break;
     case MQTT_EVENT_ERROR:
         ESP_LOGI(TAG, "MQTT_EVENT_ERROR");
@@ -105,7 +112,7 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     }
 }
 
-void mqtt_app_start(void)
+void mqtt_app_start(QueueHandle_t *pPowerQueue)
 {
     esp_mqtt_client_config_t mqtt_cfg = {
         .broker.address.uri = MQTT_BROKER,
@@ -113,6 +120,6 @@ void mqtt_app_start(void)
 
     client = esp_mqtt_client_init(&mqtt_cfg);
     /* The last argument may be used to pass data to the event handler, in this example mqtt_event_handler */
-    esp_mqtt_client_register_event(client, ESP_EVENT_ANY_ID, mqtt_event_handler, NULL);
+    esp_mqtt_client_register_event(client, ESP_EVENT_ANY_ID, mqtt_event_handler, pPowerQueue);
     esp_mqtt_client_start(client);
 }
