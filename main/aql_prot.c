@@ -118,7 +118,7 @@ int parseOutputResponse(uint8_t *response, int len, aquaVal_t* val) {
   ######################################################################*/
 
 int prepareOutputCommand(uint8_t output_percent, uint8_t* cmd) {
-  if(output_percent >= 101) {
+  if(output_percent > 101) {
     ESP_LOGE(TAG, "Output percent not in range!"); // 101 for Boost mode.
     return(-15);
   }

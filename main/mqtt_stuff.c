@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <inttypes.h>
+#include <ctype.h>
 #include "esp_system.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
@@ -16,30 +17,40 @@
 #include "aql_config.h"
 #include "mqtt_stuff.h"
 
+static const char *TAG = "mqtt";
+static esp_mqtt_client_handle_t client;
+
 #ifdef AQUAL_WITHOUT_UART
 	char topicBuf[] = "pool/dummy/---------------";
 #else
 	char topicBuf[] = "pool/swg/---------------";
 #endif
-char* topic(char* end) {
-  strcpy(topicBuf+(sizeof(topicBuf)-16), end);
+char* topic(char* end, size_t end_len, size_t* len) {
+  memcpy(topicBuf+(sizeof(topicBuf)-16), end, end_len);
+  *len = sizeof(topicBuf)-17 + end_len;
   return topicBuf;  
 }
-
-static const char *TAG = "mqtt";
-static esp_mqtt_client_handle_t client;
 
 void mqtt_publish(aquaVal_t * aquaVal) {
 	// MQTT_SKIP_PUBLISH_IF_DISCONNECTED should be enabled in menuconfig!
 	char printBuf[4];
+	size_t len;
 	sprintf(printBuf, "%3.1f", aquaVal->ph_setpoint);
-	esp_mqtt_client_publish(client, topic("ph_setpoint"), printBuf, 0, 1, 1);
+	esp_mqtt_client_publish(client, topic("ph_setpoint",sizeof("ph_setpoint"),&len), printBuf, 0, 1, 1);
 	sprintf(printBuf, "%3.1f", aquaVal->ph_current);
-	esp_mqtt_client_publish(client, topic("ph_current"), printBuf, 0, 1, 1);
+	esp_mqtt_client_publish(client, topic("ph_current",sizeof("ph_current"),&len), printBuf, 0, 1, 1);
 	sprintf(printBuf, "%3d", aquaVal->acl_setpoint);
-	esp_mqtt_client_publish(client, topic("acl_setpoint"), printBuf, 0, 1, 1);
+	esp_mqtt_client_publish(client, topic("acl_setpoint",sizeof("acl_setpoint"),&len), printBuf, 0, 1, 1);
 	sprintf(printBuf, "%3d", aquaVal->acl_current);
-	esp_mqtt_client_publish(client, topic("acl_current"), printBuf, 0, 1, 1);
+	esp_mqtt_client_publish(client, topic("acl_current",sizeof("acl_current"),&len), printBuf, 0, 1, 1);
+}
+
+bool onlyDigits( char* s, size_t len ) {
+  char* end = s + len;
+  do {
+    if( !isdigit( (uint8_t)*s )) return false; 
+  } while( ++s < end );
+  return true;
 }
 	
 static void log_error_if_nonzero(const char *message, int error_code)
@@ -66,11 +77,12 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     esp_mqtt_event_handle_t event = event_data;
     esp_mqtt_client_handle_t client = event->client;
     int msg_id;
+    size_t len;
     switch ((esp_mqtt_event_id_t)event_id) {
     case MQTT_EVENT_CONNECTED:
         ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
 
-        msg_id = esp_mqtt_client_subscribe(client, topic("power"), 1);
+        msg_id = esp_mqtt_client_subscribe(client, topic("power",sizeof("power"),&len), 1);
         ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
 
 		        break;
@@ -91,9 +103,17 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
         ESP_LOGI(TAG, "MQTT_EVENT_DATA");
         ESP_LOGI(TAG, "TOPIC=%.*s\r\n", event->topic_len, event->topic);
         ESP_LOGI(TAG, "DATA=%.*s\r\n", event->data_len, event->data);
-    		if( strcmp( event->topic, topic("power") ) == 0 ) {
+    		if(( event->data_len <= 3 ) && onlyDigits( event->data, event->data_len )) {
+    		  topic("power", sizeof("power"), &len);
+    		  if(( event->topic_len == len ) && ( 0 == memcmp( event->topic, topicBuf, len ))) {
     		    int pow = atoi(event->data);
+    		    if( pow > 101 ) {
+    		      ESP_LOGW(TAG, "Power > 101 was set, will be set to 101");
+    		      pow = 101;
+    		      esp_mqtt_client_publish(client, topicBuf, "101", 3, 1, 1);
+    		    }
     		    xQueueOverwrite(powerQueue, &pow);
+    		  }
     		}
         break;
     case MQTT_EVENT_ERROR:
@@ -116,6 +136,7 @@ void mqtt_app_start(QueueHandle_t *pPowerQueue)
 {
     esp_mqtt_client_config_t mqtt_cfg = {
         .broker.address.uri = MQTT_BROKER,
+        .credentials.client_id = MQTT_CLIENT_ID,
     };
 
     client = esp_mqtt_client_init(&mqtt_cfg);
