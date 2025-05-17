@@ -42,8 +42,11 @@ some led`s
 #define BLUE_LED_DELAY 100
 
 //UART pins and parameters
-#define AQUAL_TXD (23)
-#define AQUAL_RXD (22)
+//#define AQUAL_TXD (23)
+#define AQUAL_TXD (5)
+//#define AQUAL_RXD (22)
+#define AQUAL_RXD (15)
+//#define AQUAL_RTS (18)
 #define AQUAL_RTS (18)
 #define BAUD_RATE (9600)
 
