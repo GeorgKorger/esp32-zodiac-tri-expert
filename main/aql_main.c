@@ -37,6 +37,7 @@ void app_main(void)
 	ESP_LOGI(TAG, "[APP] IDF version: %s", esp_get_idf_version());
 
 	esp_log_level_set("*", ESP_LOG_INFO);
+	// esp_log_level_set("mqtt", ESP_LOG_DEBUG);
 
 /*	esp_log_level_set("mqtt_client", ESP_LOG_INFO);
 	esp_log_level_set("mqtt", ESP_LOG_INFO);

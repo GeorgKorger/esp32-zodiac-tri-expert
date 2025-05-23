@@ -18,7 +18,7 @@ menu "Example Connection Configuration"
         config EXAMPLE_PROVIDE_WIFI_CONSOLE_CMD
             depends on !EXAMPLE_WIFI_SSID_PWD_FROM_STDIN
             bool "Provide wifi connect commands"
-            default y
+            default n
             help
                 Provide wifi connect commands for esp_console.
                 Please use `example_register_wifi_connect_commands` to register them.
@@ -40,7 +40,7 @@ menu "Example Connection Configuration"
 
         config EXAMPLE_WIFI_CONN_MAX_RETRY
             int "Maximum retry"
-            default 6
+            default 4
             help
                 Set the Maximum retry to avoid station reconnecting to the AP unlimited,
                 in case the AP is really inexistent.
@@ -256,7 +256,7 @@ menu "Example Connection Configuration"
     config EXAMPLE_CONNECT_IPV6
         depends on EXAMPLE_CONNECT_WIFI || EXAMPLE_CONNECT_ETHERNET || EXAMPLE_CONNECT_PPP || EXAMPLE_CONNECT_THREAD
         bool "Obtain IPv6 address"
-        default y
+        default n
         select LWIP_IPV6
         select LWIP_PPP_ENABLE_IPV6 if EXAMPLE_CONNECT_PPP
         help

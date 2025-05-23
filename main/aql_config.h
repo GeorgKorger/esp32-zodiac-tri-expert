@@ -1,5 +1,15 @@
 /*
 TODO
+start main loop even if wifi not connected
+power rückmeldung with retain
+? publish loglevel after boot 
+DONE: dont store power 101 in flash
+DONE: change dynamic loglevel via mqtt
+reorder if abfrage for power topic
+DONE: check event->data_len>0 before atoi
+DONE: copy event->data to printBuf and terminate with \0 before atoi
+try: subscribe to all subtopics
+try: only compare subtopic
 publish power if received wrong value
 Stop boost after x hours, save previous power to flash
 Flash write only if values changed
@@ -35,7 +45,7 @@ some led`s
 	so you can debug on chip without connection to tri-expert.
 	Must also be defined when mocking.
 */
-#define AQUAL_WITHOUT_UART
+//#define AQUAL_WITHOUT_UART
 
 //blue led GPIO PIN 2
 #define BLUE_LED 2

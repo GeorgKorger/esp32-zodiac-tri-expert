@@ -20,10 +20,13 @@
 static const char *TAG = "mqtt";
 static esp_mqtt_client_handle_t client;
 
+static char printBuf[4];
 #ifdef AQUAL_WITHOUT_UART
-	char topicBuf[] = "pool/dummy/---------------";
+	static char topicBuf[] = "pool/dummy/---------------";
+	#undef MQTT_CLIENT_ID
+	#define MQTT_CLIENT_ID "PumpBoothDummy"
 #else
-	char topicBuf[] = "pool/swg/---------------";
+	static char topicBuf[] = "pool/swg/---------------";
 #endif
 char* topic(char* end, size_t end_len, size_t* len) {
   memcpy(topicBuf+(sizeof(topicBuf)-16), end, end_len);
@@ -33,7 +36,6 @@ char* topic(char* end, size_t end_len, size_t* len) {
 
 void mqtt_publish(aquaVal_t * aquaVal) {
 	// MQTT_SKIP_PUBLISH_IF_DISCONNECTED should be enabled in menuconfig!
-	char printBuf[4];
 	size_t len;
 	sprintf(printBuf, "%3.1f", aquaVal->ph_setpoint);
 	esp_mqtt_client_publish(client, topic("ph_setpoint",sizeof("ph_setpoint"),&len), printBuf, 0, 1, 1);
@@ -83,6 +85,7 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
         ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
 
         msg_id = esp_mqtt_client_subscribe(client, topic("power",sizeof("power"),&len), 1);
+        msg_id = esp_mqtt_client_subscribe(client, topic("loglevel",sizeof("loglevel"),&len), 1);
         ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
 
 		        break;
@@ -103,16 +106,38 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
         ESP_LOGI(TAG, "MQTT_EVENT_DATA");
         ESP_LOGI(TAG, "TOPIC=%.*s\r\n", event->topic_len, event->topic);
         ESP_LOGI(TAG, "DATA=%.*s\r\n", event->data_len, event->data);
-    		if(( event->data_len <= 3 ) && onlyDigits( event->data, event->data_len )) {
+    		if(( event->data_len > 0 ) && ( event->data_len <= 3 ) && onlyDigits( event->data, event->data_len )) {
     		  topic("power", sizeof("power"), &len);
     		  if(( event->topic_len == len ) && ( 0 == memcmp( event->topic, topicBuf, len ))) {
-    		    int pow = atoi(event->data);
+    		    memcpy(printBuf, event->data, event->data_len);
+    		    printBuf[event->data_len] = '\0';
+    		    int pow = atoi(printBuf);
     		    if( pow > 101 ) {
     		      ESP_LOGW(TAG, "Power > 101 was set, will be set to 101");
     		      pow = 101;
     		      esp_mqtt_client_publish(client, topicBuf, "101", 3, 1, 1);
     		    }
     		    xQueueOverwrite(powerQueue, &pow);
+    		  }
+    		}
+    		else {
+    		  topic("loglevel", sizeof("loglevel"), &len);
+    		  if(( event->topic_len == len ) && ( 0 == memcmp( event->topic, topicBuf, len ))) {
+    		    ESP_LOGD(TAG, "received loglevel, data_len: %d", event->data_len);
+    		    if(( event->data_len == sizeof("info")-1 ) && ( 0 == memcmp( event->data, "info", event->data_len ))) {
+    		      ESP_LOGI(TAG, "set loglevel INFO");
+    		      esp_log_level_set("*", ESP_LOG_INFO);
+    		    }
+    		    else if(( event->data_len == sizeof("debug1")-1 ) && ( 0 == memcmp( event->data, "debug1", event->data_len ))) {
+    		      ESP_LOGI(TAG, "set loglevel DEBUG (without wifi)");
+    		      esp_log_level_set("*", ESP_LOG_DEBUG);
+    		      esp_log_level_set("wifi", ESP_LOG_INFO);
+    		    }
+    		    else if(( event->data_len == sizeof("debug2")-1 ) && ( 0 == memcmp( event->data, "debug2", event->data_len ))) {
+    		      ESP_LOGI(TAG, "set loglevel DEBUG");
+    		      esp_log_level_set("*", ESP_LOG_DEBUG);
+    		      esp_log_level_set("wifi", ESP_LOG_DEBUG);
+    		    }
     		  }
     		}
         break;

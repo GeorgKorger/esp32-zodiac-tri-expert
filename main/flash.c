@@ -52,6 +52,7 @@ int restorePowerFromFlash(void) {
 
 //ToDo: store only, if different value in flash
 void storePowerToFlash(int8_t p) {
+  if( p > 100 ) return; //do not store 101 (aka boost) to flash - temporar only
   esp_err_t err = ESP_FAIL;
   if( !nvs_initialzed ) {
     // init
