@@ -1,7 +1,7 @@
 # This file was generated using idf.py save-defconfig. It can be edited manually.
 # Espressif IoT Development Framework (ESP-IDF) 5.5.0 Project Minimal Configuration
 #
-CONFIG_ESPTOOLPY_FLASHSIZE_8MB=y
+CONFIG_ESPTOOLPY_FLASHSIZE_2MB=y
 CONFIG_PARTITION_TABLE_SINGLE_APP_LARGE=y
 CONFIG_WIFI_WAIT=n
 CONFIG_GDMA_CTRL_FUNC_IN_IRAM=y
