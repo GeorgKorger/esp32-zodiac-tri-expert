@@ -9,9 +9,9 @@
 
 typedef struct aquaVal_s {
   float ph_setpoint;
-  int acl_setpoint;
+  uint16_t acl_setpoint;
   float ph_current;
-  int acl_current;
+  uint16_t acl_current;
 }aquaVal_t;
 
 int parseIdResponse(uint8_t *response,int len);

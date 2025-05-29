@@ -30,28 +30,28 @@ esp_err_t reInitFlash(void) {
   return initFlash();
 }
 
-int restorePowerFromFlash(void) {
+uint8_t restorePowerFromFlash(void) {
   esp_err_t err = ESP_FAIL;
   if( !nvs_initialzed ) {
     // init
     err = initFlash();
-    if( err != ESP_OK ) return( ESP_FAIL );
+    if( err != ESP_OK ) return( 255 );
   }
   // read
-  int8_t p;
-  err = nvs_get_i8(aql_handle, "power", &p);
+  uint8_t p;
+  err = nvs_get_u8(aql_handle, "power", &p);
   if( err != ESP_OK ) {
     nvs_close(aql_handle);
     err = initFlash();
-    if( err != ESP_OK ) return( ESP_FAIL );
-    err = nvs_get_i8(aql_handle, "power", &p);
-    if( err != ESP_OK ) return( ESP_FAIL );
+    if( err != ESP_OK ) return( 255 );
+    err = nvs_get_u8(aql_handle, "power", &p);
+    if( err != ESP_OK ) return( 255 );
   }
   return p;
 }
 
 //ToDo: store only, if different value in flash
-void storePowerToFlash(int8_t p) {
+void storePowerToFlash(uint8_t p) {
   if( p > 100 ) return; //do not store 101 (aka boost) to flash - temporar only
   esp_err_t err = ESP_FAIL;
   if( !nvs_initialzed ) {
@@ -60,13 +60,13 @@ void storePowerToFlash(int8_t p) {
     if( err != ESP_OK ) return;
   }
   // write
-  err = nvs_set_i8(aql_handle, "power", p);
+  err = nvs_set_u8(aql_handle, "power", p);
   if( err != ESP_OK ) {
     nvs_commit(aql_handle);
     nvs_close(aql_handle);
     err = initFlash();
     if( err != ESP_OK ) return;
-    err = nvs_set_i8(aql_handle, "power", p);
+    err = nvs_set_u8(aql_handle, "power", p);
     if( err != ESP_OK ) return;
   }
   return;

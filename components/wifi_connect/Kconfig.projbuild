@@ -1,0 +1,85 @@
+menu "Wifi Connection Configuration"
+
+        config WIFI_CONN_MAX_RETRY
+            int "Maximum retry"
+            default 4
+            help
+                Set the Maximum retry to avoid station reconnecting to the AP unlimited,
+                in case the AP is really inexistent.
+
+        config WIFI_WAIT
+            bool "Wait for IP Address"
+            default y
+            help
+                Choose if wifi_connect blocks till IP Address set,
+
+        choice WIFI_SCAN_METHOD
+            prompt "WiFi Scan Method"
+            default WIFI_SCAN_METHOD_ALL_CHANNEL
+            help
+                WiFi scan method:
+
+                If "Fast" is selected, scan will end after find SSID match AP.
+
+                If "All Channel" is selected, scan will end after scan all the channel.
+
+            config WIFI_SCAN_METHOD_FAST
+                bool "Fast"
+            config WIFI_SCAN_METHOD_ALL_CHANNEL
+                bool "All Channel"
+        endchoice
+
+        menu "WiFi Scan threshold"
+            config WIFI_SCAN_RSSI_THRESHOLD
+                int "WiFi minimum rssi"
+                range -127 0
+
+                default -127
+                help
+                    The minimum rssi to accept in the scan mode.
+
+            choice WIFI_SCAN_AUTH_MODE_THRESHOLD
+                prompt "WiFi Scan auth mode threshold"
+                default WIFI_AUTH_OPEN
+                help
+                    The weakest authmode to accept in the scan mode.
+
+                config WIFI_AUTH_OPEN
+                    bool "OPEN"
+                config WIFI_AUTH_WEP
+                    bool "WEP"
+                config WIFI_AUTH_WPA_PSK
+                    bool "WPA PSK"
+                config WIFI_AUTH_WPA2_PSK
+                    bool "WPA2 PSK"
+                config WIFI_AUTH_WPA_WPA2_PSK
+                    bool "WPA WPA2 PSK"
+                config WIFI_AUTH_WPA2_ENTERPRISE
+                    bool "WPA2 ENTERPRISE"
+                config WIFI_AUTH_WPA3_PSK
+                    bool "WPA3 PSK"
+                config WIFI_AUTH_WPA2_WPA3_PSK
+                    bool "WPA2 WPA3 PSK"
+                config WIFI_AUTH_WAPI_PSK
+                    bool "WAPI PSK"
+            endchoice
+        endmenu
+
+        choice WIFI_CONNECT_AP_SORT_METHOD
+            prompt "WiFi Connect AP Sort Method"
+            default WIFI_CONNECT_AP_BY_SIGNAL
+            help
+                WiFi connect AP sort method:
+
+                If "Signal" is selected, Sort matched APs in scan list by RSSI.
+
+                If "Security" is selected, Sort matched APs in scan list by security mode.
+
+            config WIFI_CONNECT_AP_BY_SIGNAL
+                bool "Signal"
+            config WIFI_CONNECT_AP_BY_SECURITY
+                bool "Security"
+        endchoice
+
+
+endmenu

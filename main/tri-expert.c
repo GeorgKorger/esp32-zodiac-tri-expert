@@ -115,7 +115,7 @@ char testOutputResponse[] = {0x00,PACKET_HEADER,2,3,4,5,6,7,75,62,77,45,0x30,PAC
       ESP_LOGE(TAG, "Error parse response in setPowerReadVal");
     }
     else {
-		mqtt_publish(pAquaVal);
+		mqtt_publish();
 		//flash blue led
 		gpio_set_level(BLUE_LED, 1);
 		vTaskDelay( BLUE_LED_DELAY / portTICK_PERIOD_MS ); //flash time
