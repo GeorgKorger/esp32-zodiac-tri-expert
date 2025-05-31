@@ -11,6 +11,11 @@
 
 static const char *TAG = "aql_prot";
 
+extern aquaVal_t aquaVal;
+extern uint8_t power;
+
+extern uint8_t sOutputCommand[];
+
 // Checksum is calculated as sum of all previous bytes mod 256.
 uint8_t calc_checksum(uint8_t* dataPtr, size_t len) {
   uint16_t sum = 0;
@@ -95,19 +100,20 @@ int parseIdResponse(uint8_t *response, int len) {
   return newLen;
 }
 
-int parseOutputResponse(uint8_t *response, int len, aquaVal_t* val) {
+int parseOutputResponse(uint8_t *response, int len) {
   if(len < 15) {
     ESP_LOGE(TAG, "SetOutputResponse to small");
     return(-31);
   }
   int newLen = aquaLinkResponse(&response, len);
   if( newLen>=10 ) {
-    val->ph_setpoint  = (float)response[6] / 10;
-    val->acl_setpoint = response[7] * 10;
-    val->ph_current   = (float)response[8] / 10;
-    val->acl_current  = response[9] * 10;
-    ESP_LOGD(TAG, "pH setpoint/current: %3.1f/%3.1f",val->ph_setpoint,val->ph_current);
-    ESP_LOGD(TAG, "acl setpoint/current: %3d/%3d",val->acl_setpoint,val->acl_current);
+    aquaVal.ph_setpoint  = (float)response[6] / 10;
+    aquaVal.acl_setpoint = response[7] * 10;
+    aquaVal.ph_current   = (float)response[8] / 10;
+    aquaVal.acl_current  = response[9] * 10;
+    memcpy(aquaVal.extra_bytes, response, 6);
+    ESP_LOGD(TAG, "pH setpoint/current: %3.1f/%3.1f",aquaVal.ph_setpoint,aquaVal.ph_current);
+    ESP_LOGD(TAG, "acl setpoint/current: %3d/%3d",aquaVal.acl_setpoint,aquaVal.acl_current);
     return 0;
   }
   return -41;
@@ -117,13 +123,13 @@ int parseOutputResponse(uint8_t *response, int len, aquaVal_t* val) {
   # Commands
   ######################################################################*/
 
-int prepareOutputCommand(uint8_t output_percent, uint8_t* cmd) {
-  if(output_percent > 101) {
-    ESP_LOGE(TAG, "Output percent not in range!"); // 101 for Boost mode.
+int prepareOutputCommand(void) {
+  if(power > 101) {
+    ESP_LOGE(TAG, "power not in range!"); // 101 for Boost mode.
     return(-15);
   }
-  cmd[5] = output_percent;
-  cmd[6] = calc_checksum(cmd, 6);
+  sOutputCommand[5] = power;
+  sOutputCommand[6] = calc_checksum(sOutputCommand, 6);
   return 0;
 }
 

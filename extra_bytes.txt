@@ -1,0 +1,6 @@
+00.16.03.03.22.00 50% oder 100%, acl aktiv, ph nicht aktiv
+
+00.16.03.03.02.00 0% OFF
+
+00.16.03.03.02.01 flow störung
+

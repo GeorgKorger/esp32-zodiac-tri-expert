@@ -19,6 +19,9 @@
 
 static const char *TAG = "tri-expert";
 
+extern aquaVal_t aquaVal;
+extern uint8_t power;
+
 const uint8_t sIdCommand[]     = { 0x00, PACKET_HEADER, PACKET_DEST_AQUALINK, 0x14, 0x01, 0xD7, PACKET_FOOTER };
 uint8_t sOutputCommand[] = { 0x00, PACKET_HEADER, PACKET_DEST_AQUALINK, 0x11, 0x00, 0x00, PACKET_FOOTER };
 
@@ -94,12 +97,12 @@ void triExpertInit(void)
   gpio_set_direction(BLUE_LED, GPIO_MODE_OUTPUT);
 }
 
-int setPowerReadVal(int8_t power, aquaVal_t * pAquaVal) {
+int setPowerReadVal() {
   int len, err = -1;
   // Allocate buffers for UART
   uint8_t* data = (uint8_t*) malloc(BUF_SIZE);
   //Write SetPower command to UART
-  prepareOutputCommand(power, sOutputCommand);
+  prepareOutputCommand();
   aqual_send(AQUAL_UART_PORT, sOutputCommand, (sizeof(sOutputCommand)));
 
   //Read data from UART
@@ -110,16 +113,16 @@ char testOutputResponse[] = {0x00,PACKET_HEADER,2,3,4,5,6,7,75,62,77,45,0x30,PAC
   len = sizeof(testOutputResponse);
   memcpy(data, testOutputResponse, len);
 #endif
-    err = parseOutputResponse(data, len, pAquaVal);
+    err = parseOutputResponse(data, len);
     if(err) {
       ESP_LOGE(TAG, "Error parse response in setPowerReadVal");
     }
     else {
-		mqtt_publish();
-		//flash blue led
-		gpio_set_level(BLUE_LED, 1);
-		vTaskDelay( BLUE_LED_DELAY / portTICK_PERIOD_MS ); //flash time
-		gpio_set_level(BLUE_LED, 0);
+		  mqtt_publish();
+		  //flash blue led
+		  gpio_set_level(BLUE_LED, 1);
+		  vTaskDelay( BLUE_LED_DELAY / portTICK_PERIOD_MS ); //flash time
+		  gpio_set_level(BLUE_LED, 0);
     }
     free(data);
     return err;

@@ -1,7 +1,7 @@
 /*
 TODO
 DONE: start main loop even if wifi not connected
-reconnect if wifi disconnect
+DONE: reconnect if wifi disconnect
 DONE: power rückmeldung with retain
 ? publish loglevel after boot 
 DONE: dont store power 101 in flash
@@ -15,7 +15,7 @@ DONE: if mqtt disconnect: unsubscribe power
 DONE: if mqtt connect: publish power before subscribe to power 
 Stop boost after x hours
 Flash write only if values changed
-publish extra bytes
+DONE: publish extra bytes
 DONE: remove example from example_connect
 DONE: remove unnessecary code from example_connect
 relais for pump and heater
@@ -28,7 +28,6 @@ some led`s
 
 //delay on startup [s]
 #define INIT_DELAY 20
-
 //delay between tri-expert commands (minimal 10 sec!)
 #define TRI_EXPERT_LOOP_DELAY 60
 

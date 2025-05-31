@@ -116,12 +116,28 @@ void doPublish_f(char *subTopic, size_t subTopicSize, float val) {
 	doPublish(subTopic, subTopicSize, printBuf);
 }
 
+void doPublish_h(char *subTopic, size_t subTopicSize, uint8_t *val, size_t valLen) {
+	char* printBuf = (char*) malloc(( 3 * valLen * sizeof(char) ) + 1 );
+	if( printBuf != NULL ) {
+  	char* c = printBuf;
+	  for( int i = 0; i < valLen; i++ ) {
+	    sprintf(c, "%02X.", val[i]);
+	    c += 3;
+	  }
+	  *(--c) = '\0'; // remove last dot
+	ESP_LOGD(TAG, "\"%s\"", printBuf);
+	doPublish(subTopic, subTopicSize, printBuf);
+	free(printBuf);
+  }
+}
+
 void mqtt_publish() {
 	// MQTT_SKIP_PUBLISH_IF_DISCONNECTED should be enabled in menuconfig!
   doPublish_f ("ph_setpoint", sizeof("ph_setpoint"),  aquaVal.ph_setpoint);
   doPublish_f ("ph_current",  sizeof("ph_current"),   aquaVal.ph_current);
   doPublish_u16("acl_setpoint",sizeof("acl_setpoint"), aquaVal.acl_setpoint);
   doPublish_u16("acl_current", sizeof("acl_current"),  aquaVal.acl_current);
+  doPublish_h("extra_bytes", sizeof("extra_bytes"),  aquaVal.extra_bytes, 6);
 }
 
 

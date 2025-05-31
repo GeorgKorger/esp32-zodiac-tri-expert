@@ -86,7 +86,7 @@ void app_main(void)
 
     if( post_power_trigger != ESP_OK ) post_power_trigger = esp_event_post(AQL_EVENTS, AQL_EVENT_POWER_SET, NULL, 0, 100 / portTICK_PERIOD_MS);
 
-    setPowerReadVal(power, &aquaVal);
+    setPowerReadVal();
   }
 }
 

@@ -12,10 +12,11 @@ typedef struct aquaVal_s {
   uint16_t acl_setpoint;
   float ph_current;
   uint16_t acl_current;
+  uint8_t extra_bytes[6];
 }aquaVal_t;
 
 int parseIdResponse(uint8_t *response,int len);
-int prepareOutputCommand(uint8_t output_percent, uint8_t* cmd);
-int parseOutputResponse(uint8_t *response, int len, aquaVal_t* val);
+int prepareOutputCommand(void);
+int parseOutputResponse(uint8_t *response, int len);
 
 #endif

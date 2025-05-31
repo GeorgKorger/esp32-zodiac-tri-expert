@@ -4,6 +4,6 @@
 #include "aql_prot.h"
 void triExpertInit(void);
 int readID(void);
-int setPowerReadVal(int8_t power, aquaVal_t * pAquaVal);
+int setPowerReadVal(void);
 
 #endif
