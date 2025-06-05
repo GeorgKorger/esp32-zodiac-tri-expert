@@ -17,11 +17,11 @@
 #include "aql_config.h"
 #include "flash.h"
 #include "mqtt_stuff.h"
-#include "aql_main.h"
 
 extern aquaVal_t aquaVal;
 extern uint8_t power;
 extern QueueHandle_t powerQueue;
+bool powerQueue_closed = false; // avoids overwriting special values in the queue
 
 static const char *TAG = "mqtt";
 static esp_mqtt_client_handle_t client;
@@ -133,20 +133,6 @@ void doPublish_h(char *subTopic, size_t subTopicSize, uint8_t *val, size_t valLe
   }
 }
 
-void mqtt_publish() {
-	// MQTT_SKIP_PUBLISH_IF_DISCONNECTED should be enabled in menuconfig!
-  doPublish_f ("ph_setpoint", sizeof("ph_setpoint"),  aquaVal.ph_setpoint);
-  doPublish_f ("ph_current",  sizeof("ph_current"),   aquaVal.ph_current);
-  doPublish_u16("acl_setpoint",sizeof("acl_setpoint"), aquaVal.acl_setpoint);
-  doPublish_u16("acl_current", sizeof("acl_current"),  aquaVal.acl_current);
-  doPublish_h("extra_bytes", sizeof("extra_bytes"),  aquaVal.extra_bytes, 6);
-  doPublish_u16("retries", sizeof("retries"),  aquaVal.retries);
-}
-
-void mqtt_publish_connected() {
-  doPublish_u16("connected", sizeof("connected"),  aquaVal.connected);
-}
-
 
 
 
@@ -169,6 +155,14 @@ static void log_error_if_nonzero(const char *message, int error_code)
     }
 }
 
+static void set_powerQueue(uint8_t val) {
+  if( !powerQueue_closed ) xQueueOverwrite(powerQueue, &val);
+}
+
+static void set_and_close_powerQueue(uint8_t val) {
+  set_powerQueue(val);
+  powerQueue_closed = true;
+}
 
 /***************
 ** AQL Events **
@@ -185,6 +179,20 @@ static void aql_event_handler(void* handler_args, esp_event_base_t base, int32_t
         ESP_LOGD(TAG, "AquaLink power event");
         storePowerToFlash(power);
         doPublish_u16("power", sizeof("power"), power);
+        break;
+      case AQL_EVENT_PUBLISH_AQLVAL:
+	      // MQTT_SKIP_PUBLISH_IF_DISCONNECTED should be enabled in menuconfig!
+        doPublish_f ("ph_setpoint", sizeof("ph_setpoint"),  aquaVal.ph_setpoint);
+        doPublish_f ("ph_current",  sizeof("ph_current"),   aquaVal.ph_current);
+        doPublish_u16("acl_setpoint",sizeof("acl_setpoint"), aquaVal.acl_setpoint);
+        doPublish_u16("acl_current", sizeof("acl_current"),  aquaVal.acl_current);
+        doPublish_h("extra_bytes", sizeof("extra_bytes"),  aquaVal.extra_bytes, 6);
+        doPublish_u16("retries", sizeof("retries"),  aquaVal.retries);
+        break;
+      case AQL_EVENT_PUBLISH_CONNECTED:
+        doPublish_u16("connected", sizeof("connected"),  aquaVal.connected);
+        break;
+
     }
 }
 
@@ -274,7 +282,7 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     		      ESP_LOGW(TAG, "Power > 101 was set, will be set to 101");
     		      pow = 101;
     		    }
-    		    xQueueOverwrite(powerQueue, &pow);
+    		    set_powerQueue(pow);
     		  }
     		  else {
     		    ESP_LOGW(TAG, "mqtt data for power malformed");
@@ -305,11 +313,13 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
 		        ESP_LOGD(TAG, "received reboot, data_len: %d", event->data_len);
     		    if( IS_DATA( "ota" )) {
     		      ESP_LOGD(TAG, "reboot for ota");
-    		      stopp_reason = STOPP_FOR_OTA;
+    		      uint8_t pow = POWERQUEUE_OTA;
+    		      set_and_close_powerQueue(pow); // trigger ota over powerQueue
     		    }
     		    else if( IS_DATA( "boot" )) {
     		      ESP_LOGD(TAG, "reboot only");
-    		      stopp_reason = STOPP_FOR_REBOOT;
+    		      uint8_t pow = POWERQUEUE_REBOOT;
+    		      set_and_close_powerQueue(pow); // trigger reboot over powerQueue
     		    }
       		  else ESP_LOGW(TAG, "mqtt data for reboot malformed");
       		}

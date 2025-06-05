@@ -122,7 +122,7 @@ int setPowerReadVal() {
       }
       else {
         aquaVal.connected = 1;
-		    mqtt_publish();
+		    esp_event_post(AQL_EVENTS, AQL_EVENT_PUBLISH_AQLVAL, NULL, 0, 100 / portTICK_PERIOD_MS);
 		    //flash blue led
 		    gpio_set_level(BLUE_LED, 1);
 		    vTaskDelay( BLUE_LED_DELAY / portTICK_PERIOD_MS ); //flash time
@@ -133,7 +133,7 @@ int setPowerReadVal() {
     aquaVal.connected = 0;
 goodEnd:
     free(data);
-    if( aquaVal.connected != old_conn ) mqtt_publish_connected();
+    if( aquaVal.connected != old_conn ) esp_event_post(AQL_EVENTS, AQL_EVENT_PUBLISH_CONNECTED, NULL, 0, 100 / portTICK_PERIOD_MS);
     return err;
 }
 

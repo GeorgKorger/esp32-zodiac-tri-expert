@@ -24,7 +24,6 @@
 #include "flash.h"
 #include "mqtt_stuff.h"
 #include "my_ota.h"
-#include "aql_main.h"
 
 static const char *TAG = "aql_main";
 
@@ -32,7 +31,6 @@ static const char *TAG = "aql_main";
 aquaVal_t aquaVal;
 uint8_t power;
 QueueHandle_t powerQueue;
-uint8_t stopp_reason = NON_STOPP;
 
 void app_main(void)
 {
@@ -78,16 +76,21 @@ void app_main(void)
 
   // MAIN LOOP
   aquaVal.connected = 0;
-  while(stopp_reason == NON_STOPP) {
-    uint8_t pow;
+  uint8_t pow;
+  while(true) {
     vTaskDelay( 10 * 1000 / portTICK_PERIOD_MS ); //minimal 10s delay between tri-expert commands
     // delay until new power val is available or at least after (TRI_EXPERT_LOOP_DELAY - 10sec)
     if( pdTRUE == xQueueReceive( powerQueue, &pow, ( (TRI_EXPERT_LOOP_DELAY - 10) * 1000 / portTICK_PERIOD_MS ))) {
-      if( pow != power) {
-        ESP_LOGI(TAG, "Got new power val: %u",pow);
-        power = pow;
-        post_power_trigger = ESP_FAIL; // triggers event posting
-      }        
+      if( pow > 101 ) { // special events - reboot or OTA
+        break; // exit main loop
+      }
+      else {
+        if( pow != power) {
+          ESP_LOGI(TAG, "Got new power val: %u",pow);
+          power = pow;
+          post_power_trigger = ESP_FAIL; // triggers event posting
+        }
+      }
     }
 
     if( post_power_trigger != ESP_OK ) post_power_trigger = esp_event_post(AQL_EVENTS, AQL_EVENT_POWER_SET, NULL, 0, 100 / portTICK_PERIOD_MS);
@@ -99,7 +102,7 @@ void app_main(void)
   wifi_disconnect();
   nvs_flash_deinit();
 
-  if( stopp_reason == STOPP_FOR_OTA ) start_ota();
+  if( pow == POWERQUEUE_OTA ) start_ota();
   
   esp_restart(); // For all other reasons in the moment  
   

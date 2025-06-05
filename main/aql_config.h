@@ -10,15 +10,17 @@ DONE: reorder if abfrage for power topic
 DONE: check event->data_len>0 before atoi
 DONE: copy event->data to printBuf and terminate with \0 before atoi
 DONE: try: only compare subtopic
+DONE: publish extra bytes
+DONE: remove example from example_connect
+DONE: remove unnessecary code from example_connect
 DONE: publish power if received wrong value
 DONE: if mqtt disconnect: unsubscribe power
 DONE: if mqtt connect: publish power before subscribe to power 
 DONE: Retry request several times if no answer
+DONE V1.0.1+17: Trigger mqtt_publishes over eventloop
+DONE V1.0.1+17: Send reboot messages over powerQueue
 Stop boost after x hours
 Flash write only if values changed
-DONE: publish extra bytes
-DONE: remove example from example_connect
-DONE: remove unnessecary code from example_connect
 relais for pump and heater
 keys for local on/off
 local timers for on/off
