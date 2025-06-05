@@ -13,6 +13,8 @@ typedef struct aquaVal_s {
   float ph_current;
   uint16_t acl_current;
   uint8_t extra_bytes[6];
+  uint8_t retries;
+  uint8_t connected;
 }aquaVal_t;
 
 int parseIdResponse(uint8_t *response,int len);

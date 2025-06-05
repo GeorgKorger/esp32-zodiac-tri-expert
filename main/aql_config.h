@@ -13,6 +13,7 @@ DONE: try: only compare subtopic
 DONE: publish power if received wrong value
 DONE: if mqtt disconnect: unsubscribe power
 DONE: if mqtt connect: publish power before subscribe to power 
+DONE: Retry request several times if no answer
 Stop boost after x hours
 Flash write only if values changed
 DONE: publish extra bytes
@@ -36,7 +37,7 @@ some led`s
 #endif
 
 // maximal Boost duration in minutes
-#define BOOST_DURATION 5
+#define BOOST_DURATION 1440
 
 
 //mqtt broker

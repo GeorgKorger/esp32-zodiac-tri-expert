@@ -103,28 +103,37 @@ int setPowerReadVal() {
   uint8_t* data = (uint8_t*) malloc(BUF_SIZE);
   //Write SetPower command to UART
   prepareOutputCommand();
-  aqual_send(AQUAL_UART_PORT, sOutputCommand, (sizeof(sOutputCommand)));
+  aquaVal.retries = 0;
+  uint8_t old_conn = aquaVal.connected;
+  while( aquaVal.retries < 6 ) {
+    aqual_send(AQUAL_UART_PORT, sOutputCommand, (sizeof(sOutputCommand)));
 
-  //Read data from UART
-  len = uart_read_bytes(AQUAL_UART_PORT, data, BUF_SIZE, PACKET_READ_TICS);
-#ifdef AQUAL_WITHOUT_UART
-char testOutputResponse[] = {0x00,PACKET_HEADER,2,3,4,5,6,7,75,62,77,45,0x30,PACKET_FOOTER};
-  //char testOutputResponse[] = {'x'};
-  len = sizeof(testOutputResponse);
-  memcpy(data, testOutputResponse, len);
-#endif
-    err = parseOutputResponse(data, len);
-    if(err) {
-      ESP_LOGE(TAG, "Error parse response in setPowerReadVal");
+    //Read data from UART
+    len = uart_read_bytes(AQUAL_UART_PORT, data, BUF_SIZE, PACKET_READ_TICS);
+  #ifdef AQUAL_WITHOUT_UART
+  char testOutputResponse[] = {0x00,PACKET_HEADER,2,3,4,5,6,7,75,62,77,45,0x30,PACKET_FOOTER};
+    //char testOutputResponse[] = {'x'};
+    len = sizeof(testOutputResponse);
+    memcpy(data, testOutputResponse, len);
+  #endif
+      err = parseOutputResponse(data, len);
+      if(err) {
+        ESP_LOGE(TAG, "Error parse response in setPowerReadVal, %u. retry", ++aquaVal.retries);
+      }
+      else {
+        aquaVal.connected = 1;
+		    mqtt_publish();
+		    //flash blue led
+		    gpio_set_level(BLUE_LED, 1);
+		    vTaskDelay( BLUE_LED_DELAY / portTICK_PERIOD_MS ); //flash time
+		    gpio_set_level(BLUE_LED, 0);
+		    goto goodEnd;
+      }
     }
-    else {
-		  mqtt_publish();
-		  //flash blue led
-		  gpio_set_level(BLUE_LED, 1);
-		  vTaskDelay( BLUE_LED_DELAY / portTICK_PERIOD_MS ); //flash time
-		  gpio_set_level(BLUE_LED, 0);
-    }
+    aquaVal.connected = 0;
+goodEnd:
     free(data);
+    if( aquaVal.connected != old_conn ) mqtt_publish_connected();
     return err;
 }
 

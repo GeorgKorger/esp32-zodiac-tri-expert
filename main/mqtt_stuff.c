@@ -10,12 +10,14 @@
 #include "freertos/queue.h"
 #include "esp_event.h"
 #include "esp_netif.h"
+#include "esp_app_desc.h"
 
 #include "esp_log.h"
 
 #include "aql_config.h"
 #include "flash.h"
 #include "mqtt_stuff.h"
+#include "aql_main.h"
 
 extern aquaVal_t aquaVal;
 extern uint8_t power;
@@ -97,7 +99,7 @@ bool check_subTopic(char* subTopic, size_t subTopic_len, char* data, size_t data
 ** Publish Functions **
 ***********************/
 
-int doPublish(char *subTopic, size_t subTopicSize, char* buf) {
+int doPublish(char *subTopic, size_t subTopicSize, const char* buf) {
 	size_t len;
 	return esp_mqtt_client_publish(client, TOPIC2(subTopic, subTopicSize, &len), buf, 0, 1, 1);
 }
@@ -138,7 +140,14 @@ void mqtt_publish() {
   doPublish_u16("acl_setpoint",sizeof("acl_setpoint"), aquaVal.acl_setpoint);
   doPublish_u16("acl_current", sizeof("acl_current"),  aquaVal.acl_current);
   doPublish_h("extra_bytes", sizeof("extra_bytes"),  aquaVal.extra_bytes, 6);
+  doPublish_u16("retries", sizeof("retries"),  aquaVal.retries);
 }
+
+void mqtt_publish_connected() {
+  doPublish_u16("connected", sizeof("connected"),  aquaVal.connected);
+}
+
+
 
 
 /*********************
@@ -195,19 +204,35 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     esp_mqtt_event_handle_t event = event_data;
     esp_mqtt_client_handle_t client = event->client;
     static int powerMsg = -1;
+    static int rebootMsg = -1;
     size_t len;
     char printBuf[5];
     switch ((esp_mqtt_event_id_t)event_id) {
     case MQTT_EVENT_CONNECTED:
         ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
+
+        // clear the reboot reason, so that we dont end in an endless loop....
+        rebootMsg = esp_mqtt_client_publish(client, TOPIC("reboot", &len), "", 0, 1, 1);
+        if( rebootMsg < 1) {
+          ESP_LOGW(TAG,"reboot published unsuccessful, subscribe now");
+          esp_mqtt_client_subscribe(client, TOPIC("reboot", &len), 1); // subscribe anyway, if publish errors
+        }
+        else ESP_LOGD(TAG,"reboot published successful, id=%d",powerMsg);
+
         powerMsg = doPublish_u16("power", sizeof("power"), power); // publish "our" power value before subscribe
         if( powerMsg < 1) {
-          ESP_LOGD(TAG,"power published unsuccessful, subscribe now");
+          ESP_LOGW(TAG,"power published unsuccessful, subscribe now");
           esp_mqtt_client_subscribe(client, TOPIC("power", &len), 1); // subscribe anyway, if publish errors
         }
         else ESP_LOGD(TAG,"power published successful, id=%d",powerMsg);
+
         esp_mqtt_client_subscribe(client, TOPIC("loglevel", &len), 1);
         ESP_LOGI(TAG, "sent subscribe");
+        
+        // publish App Version
+        const esp_app_desc_t* appDesc = esp_app_get_description();
+        doPublish( "appVersion", sizeof("appVersion"), appDesc->version );
+
 		    break;
 
     case MQTT_EVENT_DISCONNECTED:
@@ -224,10 +249,17 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     case MQTT_EVENT_PUBLISHED:
         ESP_LOGI(TAG, "MQTT_EVENT_PUBLISHED, msg_id=%d", event->msg_id);
         if( event->msg_id == powerMsg ) {
-          ESP_LOGD(TAG,"subscribed to power later");
+          ESP_LOGI(TAG,"subscribed to power later");
           esp_mqtt_client_subscribe(client, TOPIC("power", &len), 1); // subscribe after power value was published
           powerMsg = -1;
         }
+
+        else if( event->msg_id == rebootMsg ) {
+          ESP_LOGI(TAG,"subscribed to reboot later");
+          esp_mqtt_client_subscribe(client, TOPIC("reboot", &len), 1); // subscribe after reboot was cleared
+          rebootMsg = -1;
+        }
+
         break;
     case MQTT_EVENT_DATA:
         ESP_LOGI(TAG, "MQTT_EVENT_DATA");
@@ -267,6 +299,21 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
   		    }
     		  else ESP_LOGW(TAG, "mqtt data for loglevel malformed");
   		  }
+    		else if( IS_SUBTOPIC( "reboot" )) {
+    		  if( event->data_len == 0 ) ESP_LOGD(TAG, "received reboot without data, ignoring");
+		      else {
+		        ESP_LOGD(TAG, "received reboot, data_len: %d", event->data_len);
+    		    if( IS_DATA( "ota" )) {
+    		      ESP_LOGD(TAG, "reboot for ota");
+    		      stopp_reason = STOPP_FOR_OTA;
+    		    }
+    		    else if( IS_DATA( "boot" )) {
+    		      ESP_LOGD(TAG, "reboot only");
+    		      stopp_reason = STOPP_FOR_REBOOT;
+    		    }
+      		  else ESP_LOGW(TAG, "mqtt data for reboot malformed");
+      		}
+        }
         break;
     case MQTT_EVENT_ERROR:
         ESP_LOGI(TAG, "MQTT_EVENT_ERROR");
@@ -295,5 +342,17 @@ void mqtt_app_start()
     esp_mqtt_client_register_event(client, ESP_EVENT_ANY_ID, mqtt_event_handler, NULL);
     esp_mqtt_client_start(client);
     esp_event_handler_register(AQL_EVENTS, ESP_EVENT_ANY_ID, aql_event_handler, NULL);
-
 }
+
+void mqtt_app_stopp()
+{
+  size_t len;
+  // clear the reboot reason, so that we dont end in an endless loop....
+  esp_mqtt_client_publish(client, TOPIC("reboot", &len), "", 0, 1, 1);
+  esp_mqtt_client_disconnect(client);
+  esp_event_handler_unregister(AQL_EVENTS, ESP_EVENT_ANY_ID, aql_event_handler);
+  esp_mqtt_client_unregister_event(client, ESP_EVENT_ANY_ID, mqtt_event_handler);
+  esp_mqtt_client_stop(client);
+  esp_mqtt_client_destroy(client);
+}
+

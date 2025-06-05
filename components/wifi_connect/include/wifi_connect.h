@@ -1,4 +1,5 @@
 #pragma once
+#include <stdbool.h>
 
 #include "sdkconfig.h"
 #include "esp_err.h"
@@ -53,12 +54,12 @@ extern "C" {
 /**
  * @return ESP_OK on successful connection
  */
-esp_err_t wifi_connect(void);
+esp_err_t wifi_connect(bool);
 
 /**
  * Counterpart to connect, de-initializes Wi-Fi or Ethernet
  */
-esp_err_t disconnect(void);
+esp_err_t wifi_disconnect(void);
 
 /**
  * @brief Returns esp-netif pointer created by connect() described by

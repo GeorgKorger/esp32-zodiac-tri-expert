@@ -6,12 +6,6 @@
 #include "esp_log.h"
 #include "../../main/credentials.h"
 
-#ifdef CONFIG_WIFI_WAIT
-  #define WIFI_WAIT true
-#else
-  #define WIFI_WAIT false
-#endif
-
 static const char *TAG = "wifi_connect";
 static esp_netif_t *s_wifi_sta_netif = NULL;
 static SemaphoreHandle_t s_semph_get_ip_addrs = NULL;
@@ -140,7 +134,7 @@ void wifi_shutdown(void)
     wifi_stop();
 }
 
-esp_err_t wi_connect(void)
+esp_err_t wi_connect(bool wait)
 {
     ESP_LOGI(TAG, "Start wifi_connect.");
     wifi_start();
@@ -154,8 +148,6 @@ esp_err_t wi_connect(void)
             .threshold.authmode = WIFI_SCAN_AUTH_MODE_THRESHOLD,
         },
     };
-    return wifi_sta_do_connect(wifi_config, WIFI_WAIT);
+    return wifi_sta_do_connect(wifi_config, wait);
 }
-
-
 

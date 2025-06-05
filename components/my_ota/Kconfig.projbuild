@@ -1,0 +1,10 @@
+menu "my_OTA Configuration"
+
+    config FIRMWARE_UPGRADE_URL
+        string "firmware upgrade url endpoint"
+        default "https://server:port/firmware.bin"
+        help
+            URL of server which hosts the firmware
+            image.
+
+endmenu

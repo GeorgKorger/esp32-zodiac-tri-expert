@@ -60,9 +60,9 @@ void print_all_netif_ips(const char *prefix)
 }
 
 
-esp_err_t wifi_connect(void)
+esp_err_t wifi_connect(bool wait)
 {
-    if (wi_connect() != ESP_OK) {
+    if (wi_connect(wait) != ESP_OK) {
         return ESP_FAIL;
     }
     ESP_ERROR_CHECK(esp_register_shutdown_handler(&wifi_shutdown));
@@ -73,7 +73,7 @@ esp_err_t wifi_connect(void)
 }
 
 
-esp_err_t disconnect(void)
+esp_err_t wifi_disconnect(void)
 {
     wifi_shutdown();
     ESP_ERROR_CHECK(esp_unregister_shutdown_handler(&wifi_shutdown));

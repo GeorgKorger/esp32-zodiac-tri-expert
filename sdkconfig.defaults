@@ -1,9 +1,9 @@
 # This file was generated using idf.py save-defconfig. It can be edited manually.
 # Espressif IoT Development Framework (ESP-IDF) 5.5.0 Project Minimal Configuration
 #
-CONFIG_ESPTOOLPY_FLASHSIZE_2MB=y
-CONFIG_PARTITION_TABLE_SINGLE_APP_LARGE=y
-CONFIG_WIFI_WAIT=n
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
+CONFIG_PARTITION_TABLE_TWO_OTA_LARGE=y
+CONFIG_FIRMWARE_UPGRADE_URL="https://eli.home:8070/esp32-zodiac-tri-expert.bin"
 CONFIG_GDMA_CTRL_FUNC_IN_IRAM=y
 CONFIG_ESP_NETIF_REPORT_DATA_TRAFFIC=n
 CONFIG_ESP_WIFI_SOFTAP_SUPPORT=n

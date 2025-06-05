@@ -23,12 +23,16 @@
 #include "tri-expert.h"
 #include "flash.h"
 #include "mqtt_stuff.h"
+#include "my_ota.h"
+#include "aql_main.h"
 
 static const char *TAG = "aql_main";
 
+//global Variables
 aquaVal_t aquaVal;
 uint8_t power;
 QueueHandle_t powerQueue;
+uint8_t stopp_reason = NON_STOPP;
 
 void app_main(void)
 {
@@ -61,7 +65,8 @@ void app_main(void)
 
   ESP_ERROR_CHECK(esp_netif_init());
   ESP_ERROR_CHECK(esp_event_loop_create_default());
-  ESP_ERROR_CHECK(wifi_connect());
+  // connect wifi without waiting for IP Address
+  ESP_ERROR_CHECK(wifi_connect(false));
   mqtt_app_start();
 
   ESP_LOGI(TAG, "Inital delay %d s",INIT_DELAY);
@@ -72,7 +77,8 @@ void app_main(void)
   readID();
 
   // MAIN LOOP
-  while(true) {
+  aquaVal.connected = 0;
+  while(stopp_reason == NON_STOPP) {
     uint8_t pow;
     vTaskDelay( 10 * 1000 / portTICK_PERIOD_MS ); //minimal 10s delay between tri-expert commands
     // delay until new power val is available or at least after (TRI_EXPERT_LOOP_DELAY - 10sec)
@@ -88,5 +94,15 @@ void app_main(void)
 
     setPowerReadVal();
   }
+  // Destroy anything
+  mqtt_app_stopp();
+  wifi_disconnect();
+  nvs_flash_deinit();
+
+  if( stopp_reason == STOPP_FOR_OTA ) start_ota();
+  
+  esp_restart(); // For all other reasons in the moment  
+  
 }
+
 

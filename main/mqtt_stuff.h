@@ -5,7 +5,9 @@
 #include "mqtt_client.h"
 
 void mqtt_publish(void);
+void mqtt_publish_connected(void);
 void mqtt_app_start(void);
+void mqtt_app_stopp(void);
 
 ESP_EVENT_DECLARE_BASE(AQL_EVENTS); // declaration of the aql events family
 

@@ -7,12 +7,6 @@ menu "Wifi Connection Configuration"
                 Set the Maximum retry to avoid station reconnecting to the AP unlimited,
                 in case the AP is really inexistent.
 
-        config WIFI_WAIT
-            bool "Wait for IP Address"
-            default y
-            help
-                Choose if wifi_connect blocks till IP Address set,
-
         choice WIFI_SCAN_METHOD
             prompt "WiFi Scan Method"
             default WIFI_SCAN_METHOD_ALL_CHANNEL
