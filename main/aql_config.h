@@ -19,7 +19,8 @@ DONE: if mqtt connect: publish power before subscribe to power
 DONE: Retry request several times if no answer
 DONE V1.0.1+17: Trigger mqtt_publishes over eventloop
 DONE V1.0.1+17: Send reboot messages over powerQueue
-Stop boost after x hours
+---retries shall have a delay
+---Stop boost after x hours
 Flash write only if values changed
 relais for pump and heater
 keys for local on/off
@@ -32,15 +33,17 @@ some led`s
 //delay on startup [s]
 #define INIT_DELAY 20
 //delay between tri-expert commands (minimal 10 sec!)
-#define TRI_EXPERT_LOOP_DELAY 60
+#define TRI_EXPERT_LOOP_DELAY 5
 
 #if( TRI_EXPERT_LOOP_DELAY < 10 )
   #define TRI_EXPERT_LOOP_DELAY 10
 #endif
 
 // maximal Boost duration in minutes
-#define BOOST_DURATION 1440
+#define BOOST_DURATION 2
 
+// retries in main loop to start boost timer (should be around 12 hours divided by TRI_EXPERT_LOOP_DELAY seconds)
+#define MAX_BOOST_TIMER_RETRIES 1
 
 //mqtt broker
 #define MQTT_BROKER "mqtt://eli"
@@ -53,7 +56,7 @@ some led`s
 	so you can debug on chip without connection to tri-expert.
 	Must also be defined when mocking.
 */
-//#define AQUAL_WITHOUT_UART
+#define AQUAL_WITHOUT_UART
 
 //blue led GPIO PIN 2
 #define BLUE_LED 2

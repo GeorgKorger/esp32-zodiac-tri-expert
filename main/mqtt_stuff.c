@@ -8,6 +8,7 @@
 #include "esp_system.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
+#include "freertos/timers.h"
 #include "esp_event.h"
 #include "esp_netif.h"
 #include "esp_app_desc.h"
@@ -25,7 +26,6 @@ bool powerQueue_closed = false; // avoids overwriting special values in the queu
 
 static const char *TAG = "mqtt";
 static esp_mqtt_client_handle_t client;
-
 
 /*************************
 ** Topic and data stuff **
@@ -134,8 +134,6 @@ void doPublish_h(char *subTopic, size_t subTopicSize, uint8_t *val, size_t valLe
 }
 
 
-
-
 /*********************
 ** Helper Functions **
 **********************/
@@ -164,6 +162,58 @@ static void set_and_close_powerQueue(uint8_t val) {
   powerQueue_closed = true;
 }
 
+/****************
+** Boost Timer **
+*****************/
+struct boostTimer_s {
+  bool started;
+  bool running;
+  uint16_t retries;
+  TimerHandle_t handle;
+} boostTimer;
+
+void cbBoostTimer( TimerHandle_t t ) {
+  ESP_LOGD(TAG, "Boost stopped by timer handle");
+  uint8_t pow = restorePowerFromFlash();
+  set_powerQueue(pow);
+  stopBoostTimer();
+}
+
+bool checkBoostTimer() { // returns true if boostTimer is not started after MAX_BOOST_RETRIES
+  if( boostTimer.started ) {
+    if( !boostTimer.running ) {
+      boostTimer.running = ( pdPASS == xTimerStart(boostTimer.handle, 10)) ? true : false ;
+      if( !boostTimer.running ) {
+        if( ++boostTimer.retries == MAX_BOOST_TIMER_RETRIES ) { //something must be really wrong....
+          return true;
+        }
+      }
+      else {
+        ESP_LOGI(TAG, "BoostTimer started after %u retries", boostTimer.retries);
+      }
+    }
+  }
+  else {
+    if( boostTimer.running ) {
+      boostTimer.running = ( pdPASS == xTimerDelete(boostTimer.handle, 10)) ? false : true ;
+      if( !boostTimer.running ) ESP_LOGI(TAG, "BoostTimer stopped and deleted");
+    }
+  }
+  return false;
+}
+
+void startBoostTimer() {
+  boostTimer.handle = xTimerCreate( "boost", BOOST_DURATION*60*1000/portTICK_PERIOD_MS, pdFALSE, NULL, cbBoostTimer );
+  boostTimer.retries = 0;
+  boostTimer.started = true;
+  checkBoostTimer();
+}
+
+void stopBoostTimer() {
+  boostTimer.started = false;
+  checkBoostTimer();
+}
+
 /***************
 ** AQL Events **
 ****************/
@@ -177,7 +227,13 @@ static void aql_event_handler(void* handler_args, esp_event_base_t base, int32_t
     switch (event_id) {
       case AQL_EVENT_POWER_SET:
         ESP_LOGD(TAG, "AquaLink power event");
-        storePowerToFlash(power);
+        if( power == 101 ) { //temporay, create Timer to stop, dont store to flash
+          startBoostTimer();
+        }
+        else {
+          stopBoostTimer();
+          storePowerToFlash(power);
+        }
         doPublish_u16("power", sizeof("power"), power);
         break;
       case AQL_EVENT_PUBLISH_AQLVAL:
@@ -352,6 +408,9 @@ void mqtt_app_start()
     esp_mqtt_client_register_event(client, ESP_EVENT_ANY_ID, mqtt_event_handler, NULL);
     esp_mqtt_client_start(client);
     esp_event_handler_register(AQL_EVENTS, ESP_EVENT_ANY_ID, aql_event_handler, NULL);
+    
+  boostTimer.started = false;
+  boostTimer.running = false;
 }
 
 void mqtt_app_stopp()
@@ -364,5 +423,7 @@ void mqtt_app_stopp()
   esp_mqtt_client_unregister_event(client, ESP_EVENT_ANY_ID, mqtt_event_handler);
   esp_mqtt_client_stop(client);
   esp_mqtt_client_destroy(client);
+  
+  stopBoostTimer();
 }
 

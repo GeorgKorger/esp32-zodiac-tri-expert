@@ -76,26 +76,33 @@ void app_main(void)
 
   // MAIN LOOP
   aquaVal.connected = 0;
-  uint8_t pow;
+  uint8_t pow = 255;
   while(true) {
     vTaskDelay( 10 * 1000 / portTICK_PERIOD_MS ); //minimal 10s delay between tri-expert commands
+
+    if( checkBoostTimer() ) { // True if boostTimer could not be startet within MAX_BOOST_TIMER_RETRIES
+      ESP_LOGW(TAG,"Could not start boostTimer after max retries");
+      stopBoostTimer();
+      pow = restorePowerFromFlash();
+    }
+
     // delay until new power val is available or at least after (TRI_EXPERT_LOOP_DELAY - 10sec)
     if( pdTRUE == xQueueReceive( powerQueue, &pow, ( (TRI_EXPERT_LOOP_DELAY - 10) * 1000 / portTICK_PERIOD_MS ))) {
       if( pow > 101 ) { // special events - reboot or OTA
         break; // exit main loop
       }
-      else {
-        if( pow != power) {
-          ESP_LOGI(TAG, "Got new power val: %u",pow);
-          power = pow;
-          post_power_trigger = ESP_FAIL; // triggers event posting
-        }
-      }
+    }
+
+    if( (pow < 255 ) && (pow != power)) {
+      ESP_LOGI(TAG, "Got new power val: %u",pow);
+      power = pow;
+      post_power_trigger = ESP_FAIL; // triggers event posting
     }
 
     if( post_power_trigger != ESP_OK ) post_power_trigger = esp_event_post(AQL_EVENTS, AQL_EVENT_POWER_SET, NULL, 0, 100 / portTICK_PERIOD_MS);
 
     setPowerReadVal();
+    
   }
   // Destroy anything
   mqtt_app_stopp();

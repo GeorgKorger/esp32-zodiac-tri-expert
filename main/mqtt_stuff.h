@@ -7,6 +7,10 @@
 void mqtt_app_start(void);
 void mqtt_app_stopp(void);
 
+bool checkBoostTimer(void);// returns true if boostTimer is not started after MAX_BOOST_TIMER_RETRIES
+void startBoostTimer(void);
+void stopBoostTimer(void);
+
 ESP_EVENT_DECLARE_BASE(AQL_EVENTS); // declaration of the aql events family
 
 enum {                              // declaration of the specific events under the aql event family

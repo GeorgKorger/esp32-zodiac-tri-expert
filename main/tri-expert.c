@@ -119,6 +119,7 @@ int setPowerReadVal() {
       err = parseOutputResponse(data, len);
       if(err) {
         ESP_LOGE(TAG, "Error parse response in setPowerReadVal, %u. retry", ++aquaVal.retries);
+        vTaskDelay( 3 * 1000 / portTICK_PERIOD_MS ); //delay between attempts
       }
       else {
         aquaVal.connected = 1;
